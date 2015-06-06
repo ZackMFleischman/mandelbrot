@@ -6,13 +6,23 @@
 //
 
 import java.util.Stack;
+import java.awt.Color;
 
 /////////////////////
 // Parameters
 
+// Color mode
+boolean smoothColors = true;
+
 // Number of images to write
 boolean writeImagesMode = true;
-int maxImages = 2500;
+int maxImages = 1000;
+
+// Image Size
+//int imageWidth = 640;
+//int imageHeight = 480;
+int imageWidth = 1080;
+int imageHeight = 720;
 
 // Iterations to escape
 int currentMaxIter = 2000;
@@ -27,6 +37,9 @@ double currentZoom = 1.0;
 double zoomFactor = 1.03;
 // Interesting points to zoom in on
 double[][] zoomPoints = new double[][]{
+    {-1.1351871105851659, 0.2679162115997563},
+    {-1.164129365976551, 0.22585500062515362},
+    {-1.238279742917958, -0.11372601742547422},
     {-0.7259921381684972, 0.24004692460561433},
     {-0.9895494202241311, 0.27757489483067976},
         { -0.75, 0.1 }, // Seahorse Valley
@@ -41,6 +54,8 @@ double offsetChangeSpeed = 0.05;
 
 float a,b,c,d = 0.0;
 
+color[] colorTable;
+
 // Save current frame when drawing rectangles
 PImage currImage;           // Source image
 
@@ -48,9 +63,14 @@ PImage currImage;           // Source image
 // Program starts here.
 //
 void setup() {
+    // Build Color Table
+    colorTable = new color[currentMaxIter];
+    for (int i=0; i<colorTable.length; ++i) {
+        colorTable[i] = getRandomColor();
+    }
+
     // Set the size of the canvas to the image size
-    //size(1080, 720);
-    size(640, 480);
+    size(imageWidth, imageHeight);
 
     currImage = new PImage(width, height);
 
@@ -351,7 +371,16 @@ color getMandelbrotColor(double x0, double y0) {
 color getColor(int iteration) {
     color c = color(0);
     if (iteration < currentMaxIter) {
-        c = color(255);
+        if (smoothColors) {
+            Color javaColor = Color.getHSBColor((float) iteration / (float) currentMaxIter, 0.85f, 1.0f);
+            c = color(javaColor.getRed(), javaColor.getGreen(), javaColor.getBlue());
+        } else {
+            c = colorTable[iteration % colorTable.length];
+        }
     }
     return c;
+}
+
+color getRandomColor() {
+    return color(random(255), random(255), random(255));
 }
