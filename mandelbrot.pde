@@ -5,14 +5,17 @@
 // This dumps the mandelbrot set visualization to the window.
 //
 
+import java.util.Stack;
+
 /////////////////////
 // Parameters
 
 // Number of images to write
-int maxImages = 5000;
+boolean writeImagesMode = true;
+int maxImages = 2500;
 
 // Iterations to escape
-int currentMaxIter = 30;
+int currentMaxIter = 2000;
 int maxIter = 50;
 
 // Which window we are currently using.
@@ -24,9 +27,10 @@ double currentZoom = 1.0;
 double zoomFactor = 1.03;
 // Interesting points to zoom in on
 double[][] zoomPoints = new double[][]{
+    {-0.7259921381684972, 0.24004692460561433},
     {-0.9895494202241311, 0.27757489483067976},
-    { -0.75, 0.1 }, // Seahorse Valley
-    { 0.275, 0.0 } // Elephant Valley
+        { -0.75, 0.1 }, // Seahorse Valley
+        { 0.275, 0.0 } // Elephant Valley
 };
 
 // Which point index we are zooming in on
@@ -34,6 +38,11 @@ int currentZoomPointIdx = 0;
 double xCenterOffset = 0.0;
 double yCenterOffset = 0.0;
 double offsetChangeSpeed = 0.05;
+
+float a,b,c,d = 0.0;
+
+// Save current frame when drawing rectangles
+PImage currImage;           // Source image
 
 // 
 // Program starts here.
@@ -43,11 +52,15 @@ void setup() {
     //size(1080, 720);
     size(640, 480);
 
+    currImage = new PImage(width, height);
+
     // Setup the initial window
     updateWindow();
 
     // Only draw once.
-   // noLoop();
+    if (!writeImagesMode) {
+        noLoop();
+    }
 }
 
 //
@@ -60,31 +73,84 @@ void draw() {
         System.out.println("FPS: " + (1.0 / nanoToSeconds(dt)));
     }
 
-    background(color(0));
-
-    // Draw pixels
-    loadPixels();
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            color c = getMandelbrotColorForWindow((double)x/width, (double)y/height, window);
-            setPixel(x, y, c);
+    if (!dontUpdateMandelbrot) {
+        background(0);
+        // Draw pixels
+        loadPixels();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                color c = getMandelbrotColorForWindow((double)x/width, (double)y/height, window);
+                setPixel(x, y, c);
+            }
         }
-    }
-    updatePixels(); 
 
+        // Save the current image to a buffer
+        currImage.loadPixels();
+        currImage.pixels = pixels;
+        currImage.updatePixels();
+
+        updatePixels(); 
+    } else {
+        image(currImage,0,0);
+    }
+
+    // Draw rectangle from mouse
+    stroke(127, 0, 0);
+    strokeWeight(3);
+    noFill();
+    rect(a, b, c, d);
     // Update parameter states
     updateParameters();
 
-    // Write image
-    String fileName = "frames/mandelbrot_" + frameNum + ".jpg";
-    System.out.println(fileName);
-    save(fileName);
-    frameNum++;
-    if (frameNum > maxImages) {
-        noLoop();
+    if (writeImagesMode) {
+        // Write image
+        String fileName = "frames/mandelbrot_" + frameNum + ".jpg";
+        System.out.println(fileName);
+        save(fileName);
+        frameNum++;
+        if (frameNum > maxImages) {
+            noLoop();
+        }
     }
+
+    // Reset this flag
+    dontUpdateMandelbrot = false;
 }
 
+void mousePressed() {
+    a=mouseX;
+    b=mouseY;
+}
+
+void mouseReleased(){
+    c=mouseX-a;
+    d=c*(height/(float)width);
+    updateWindowWithRect();
+    a=0.0;
+    b=0.0;
+    c=0.0;
+    d=0.0;
+    redraw();
+}
+
+Stack<MandelbrotWindow> oldWindows = new Stack<MandelbrotWindow>();
+void updateWindowWithRect() {
+    double newMinX = window.minX + ((window.maxX - window.minX) * (a / (double)width)); 
+    double newMaxX = window.minX + ((window.maxX - window.minX) * ((a+c) / (double)width)); 
+    double newMinY = window.minY + ((window.maxY - window.minY) * (b / (double)height)); 
+    double newMaxY = window.minY + ((window.maxY - window.minY) * ((b+d) / (double)height)); 
+    oldWindows.push(window);
+    window = new MandelbrotWindow(newMinX, newMaxX, newMinY, newMaxY);
+    System.out.println("Window Center: (" + ((newMaxX+newMinX)/2.0) + ", " + ((newMaxY+newMinY)/2.0) + ")");
+}
+
+boolean dontUpdateMandelbrot = false;
+void mouseDragged() {
+    c=mouseX-a;
+    d=c*(height/(float)width);
+    dontUpdateMandelbrot = true;
+    redraw();
+}
 
 void keyPressed() {
     updateCenterOffset();
@@ -94,7 +160,27 @@ void keyPressed() {
         zoomSpeed *= zoomFactor;
         redraw();
     }
+
+    if (key == 'u') {
+        currentMaxIter += 100;
+        redraw();
+    }
+    if (key == 'y') {
+        currentMaxIter -= 100;
+        redraw();
+    }
+
+    if (key == 'q') {
+        System.exit(0);
+    }
     
+    if (key == 'a') {
+        if (oldWindows.size() > 0) {
+            window = oldWindows.pop();
+        }
+        redraw();
+    }
+
     if (key == 'b') {
         zoomSpeed /= zoomFactor;
         currentZoom -= zoomSpeed;
@@ -189,21 +275,23 @@ void setPixel(int x, int y, color c) {
 
 // Update the program parameters.
 void updateParameters() {
-    // Window
-    updateWindow();
+    if (writeImagesMode) {
+        // Window
+        updateWindow();
 
-    // Iterations
-    //currentMaxIter++;
-    //currentMaxIter %= maxIter;
-    currentMaxIter+=5;
-    currentMaxIter = 1000;
+        // Iterations
+        //currentMaxIter++;
+        //currentMaxIter %= maxIter;
+        //currentMaxIter+=5;
+        //currentMaxIter = 1000;
 
-    // Zooming
-    currentZoom += zoomSpeed;
-    zoomSpeed *= zoomFactor;
-    //if (currentZoom > maxZoom) {
-    //     currentZoom = 1.0;
-    //}
+        // Zooming
+        currentZoom += zoomSpeed;
+        zoomSpeed *= zoomFactor;
+        //if (currentZoom > maxZoom) {
+        //     currentZoom = 1.0;
+        //}
+    }
 }
 
 // Update the window to account for zoom and positioning
