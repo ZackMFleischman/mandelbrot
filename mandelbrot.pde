@@ -5,17 +5,39 @@
 // This dumps the mandelbrot set visualization to the window.
 //
 
+/////////////////////
 // Parameters
-int currentMaxIter = 1;
+
+// Iterations to escape
+int currentMaxIter = 30;
 int maxIter = 50;
-MandelbrotWindow window = getMandelbrotWindow();
+
+// Which window we are currently using.
+MandelbrotWindow window = getCanonicalMandelbrotWindow();
+
+// Zooming Params
+double zoomSpeed = 0.1;
+double currentZoom = 1.0;
+double zoomFactor = 1.1;
+// Interesting points to zoom in on
+double[][] zoomPoints = new double[][]{
+    { -0.75, 0.1 }, // Seahorse Valley
+    { 0.275, 0.0 }, // Elephant Valley
+};
+
+// Which point index we are zooming in on
+int currentZoomPointIdx = 1;
 
 // 
 // Program starts here.
 //
 void setup() {
     // Set the size of the canvas to the image size
-    size(1080, 720);
+    //size(1080, 720);
+    size(640, 480);
+
+    // Setup the initial window
+    updateWindow();
 
     // Only draw once.
     //noLoop();
@@ -31,7 +53,7 @@ void draw() {
     background(color(0));
 
     // Draw pixels
-    loadPixels();  
+    loadPixels();
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             color c = getMandelbrotColorForWindow((double)x/width, (double)y/height, window);
@@ -90,13 +112,48 @@ void setPixel(int x, int y, color c) {
 
 // Update the program parameters.
 void updateParameters() {
-    currentMaxIter++;
-    currentMaxIter %= maxIter;
+    // Window
+    updateWindow();
+
+    // Iterations
+    //currentMaxIter++;
+    //currentMaxIter %= maxIter;
+    currentMaxIter+=5;
+    
+    // Zooming
+    currentZoom += zoomSpeed;
+    zoomSpeed *= zoomFactor;
+    //if (currentZoom > maxZoom) {
+   //     currentZoom = 1.0;
+    //}
 }
 
-// Get current window for the animation.
-MandelbrotWindow getMandelbrotWindow() {
-    return new MandelbrotWindow();
+// Update the window to account for zoom and positioning
+void updateWindow() {
+    double cX = zoomPoints[currentZoomPointIdx][0];
+    double cY = zoomPoints[currentZoomPointIdx][1];
+    window = getMandelbrotWindow(cX, cY, currentZoom);
+}
+
+// Get canonical Mandelbrot Set Window
+MandelbrotWindow getCanonicalMandelbrotWindow() {
+    return getMandelbrotWindow(-2.5 + (3.5/2.0), 0.0, 1.0);
+}
+
+// Get a mandelbrot set window from a center point and a zoom value
+MandelbrotWindow getMandelbrotWindow(double cX, double cY, double zoom) {
+    final double defaultWidth = 3.5;
+    final double defaultHeight = 2.0;
+
+    double windowWidth = defaultWidth / zoom;
+    double windowHeight = defaultHeight / zoom;
+
+    double minX = cX - (windowWidth/2.0);
+    double maxX = cX + (windowWidth/2.0);
+    double minY = cY - (windowHeight/2.0);
+    double maxY = cY + (windowHeight/2.0);
+
+    return new MandelbrotWindow(minX, maxX, minY, maxY);
 }
 
 // Get Mandelbrot color for image window
