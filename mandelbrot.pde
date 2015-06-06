@@ -8,6 +8,9 @@
 /////////////////////
 // Parameters
 
+// Number of images to write
+int maxImages = 5000;
+
 // Iterations to escape
 int currentMaxIter = 30;
 int maxIter = 50;
@@ -18,15 +21,19 @@ MandelbrotWindow window = getCanonicalMandelbrotWindow();
 // Zooming Params
 double zoomSpeed = 0.1;
 double currentZoom = 1.0;
-double zoomFactor = 1.1;
+double zoomFactor = 1.03;
 // Interesting points to zoom in on
 double[][] zoomPoints = new double[][]{
+    {-0.9895494202241311, 0.27757489483067976},
     { -0.75, 0.1 }, // Seahorse Valley
-    { 0.275, 0.0 }, // Elephant Valley
+    { 0.275, 0.0 } // Elephant Valley
 };
 
 // Which point index we are zooming in on
-int currentZoomPointIdx = 1;
+int currentZoomPointIdx = 0;
+double xCenterOffset = 0.0;
+double yCenterOffset = 0.0;
+double offsetChangeSpeed = 0.05;
 
 // 
 // Program starts here.
@@ -40,15 +47,18 @@ void setup() {
     updateWindow();
 
     // Only draw once.
-    //noLoop();
+   // noLoop();
 }
 
 //
 // Called after setup() finishes.
 //
-void draw() {  
+int frameNum = 1;
+void draw() {
     long dt = getTimeDelta();
-    System.out.println("FPS: " + (1.0 / nanoToSeconds(dt)));
+    if (frameNum % 20 == 0) {
+        System.out.println("FPS: " + (1.0 / nanoToSeconds(dt)));
+    }
 
     background(color(0));
 
@@ -64,7 +74,33 @@ void draw() {
 
     // Update parameter states
     updateParameters();
+
+    // Write image
+    String fileName = "frames/mandelbrot_" + frameNum + ".jpg";
+    System.out.println(fileName);
+    save(fileName);
+    frameNum++;
+    if (frameNum > maxImages) {
+        noLoop();
+    }
 }
+
+
+void keyPressed() {
+    updateCenterOffset();
+
+    if (key == ' ') {
+        currentZoom += zoomSpeed;
+        zoomSpeed *= zoomFactor;
+        redraw();
+    }
+    
+    if (key == 'b') {
+        zoomSpeed /= zoomFactor;
+        currentZoom -= zoomSpeed;
+        redraw();
+    }
+} 
 
 ///////////////// Classes /////////////////////
 public class MandelbrotWindow {
@@ -103,6 +139,47 @@ long getTimeDelta() {
     return dt;
 }
 
+// Adjust the offset of the center.
+void updateCenterOffset() {
+    switch (key) {
+        case 'j':
+            yCenterOffset += offsetChangeSpeed;
+            redraw();
+            dumpCenter();
+            break;
+        case 'k':
+            yCenterOffset -= offsetChangeSpeed;
+            redraw();
+            dumpCenter();
+            break;
+        case 'h':
+            xCenterOffset -= offsetChangeSpeed;
+            redraw();
+            dumpCenter();
+            break;
+        case 'l':
+            xCenterOffset += offsetChangeSpeed;
+            redraw();
+            dumpCenter();
+            break;
+        case '0':
+            offsetChangeSpeed *= 1.5;
+            System.out.println("Offset Change Speed: " + offsetChangeSpeed);
+            break;
+        case '9':
+            offsetChangeSpeed /= 1.5;
+            System.out.println("Offset Change Speed: " + offsetChangeSpeed);
+            break;
+    }
+}
+
+// Print the current center point to the screen
+void dumpCenter() {
+    double cX = zoomPoints[currentZoomPointIdx][0];
+    double cY = zoomPoints[currentZoomPointIdx][1];
+    System.out.println("Center Point: (" + (cX + xCenterOffset) + ", " + (cY + yCenterOffset) + ")");
+}
+
 // Set Pixel Color
 void setPixel(int x, int y, color c) {
     // Use the formula to find the 1D location
@@ -119,12 +196,13 @@ void updateParameters() {
     //currentMaxIter++;
     //currentMaxIter %= maxIter;
     currentMaxIter+=5;
-    
+    currentMaxIter = 1000;
+
     // Zooming
     currentZoom += zoomSpeed;
     zoomSpeed *= zoomFactor;
     //if (currentZoom > maxZoom) {
-   //     currentZoom = 1.0;
+    //     currentZoom = 1.0;
     //}
 }
 
@@ -132,6 +210,8 @@ void updateParameters() {
 void updateWindow() {
     double cX = zoomPoints[currentZoomPointIdx][0];
     double cY = zoomPoints[currentZoomPointIdx][1];
+    cX += xCenterOffset;
+    cY += yCenterOffset;
     window = getMandelbrotWindow(cX, cY, currentZoom);
 }
 
