@@ -15,14 +15,14 @@ import java.awt.Color;
 boolean smoothColors = true;
 
 // Number of images to write
-boolean writeImagesMode = true;
+boolean writeImagesMode = false;
 int maxImages = 1000;
 
 // Image Size
-//int imageWidth = 640;
-//int imageHeight = 480;
-int imageWidth = 1080;
-int imageHeight = 720;
+int imageWidth = 640;
+int imageHeight = 480;
+//int imageWidth = 1080;
+//int imageHeight = 720;
 
 // Iterations to escape
 int currentMaxIter = 2000;
@@ -79,6 +79,7 @@ void setup() {
 
     // Only draw once.
     if (!writeImagesMode) {
+        window = getCanonicalMandelbrotWindow();
         noLoop();
     }
 }
