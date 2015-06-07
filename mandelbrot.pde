@@ -16,7 +16,7 @@ boolean smoothColors = true;
 
 // Number of images to write
 boolean writeImagesMode = false;
-int maxImages = 1000;
+int maxImages = 1050;
 
 // Image Size
 int imageWidth = 640;
@@ -37,8 +37,8 @@ double currentZoom = 1.0;
 double zoomFactor = 1.03;
 // Interesting points to zoom in on
 double[][] zoomPoints = new double[][]{
-    {-1.1351871105851659, 0.2679162115997563},
     {-1.164129365976551, 0.22585500062515362},
+    {-1.1351871105851659, 0.2679162115997563},
     {-1.238279742917958, -0.11372601742547422},
     {-0.7259921381684972, 0.24004692460561433},
     {-0.9895494202241311, 0.27757489483067976},
@@ -129,6 +129,16 @@ void draw() {
         System.out.println(fileName);
         save(fileName);
         frameNum++;
+
+        if (frameNum == 2) {
+            for (int i=0; i<60; ++i) {
+                fileName = "frames/mandelbrot_" + frameNum + ".jpg";
+                System.out.println(fileName);
+                save(fileName);
+                frameNum++;
+            }
+        }
+
         if (frameNum > maxImages) {
             noLoop();
         }
