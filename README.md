@@ -1,8 +1,7 @@
 # mandelbrot
+### [Final Mandelbrot Zoom Video :D](https://www.youtube.com/watch?v=VPickbK8sSY)
+
 **Mandelbrot Set Visualization**
-
-#### [Final Mandelbrot Zoom Video :D](https://www.youtube.com/watch?v=VPickbK8sSY)
-
 This program can be configured in 2 ways.
 
 1.) It can run interactively. The user can drag rectangles over areas of the visualization and the program will zoom into those areas. Press 'a' to go back a level.
